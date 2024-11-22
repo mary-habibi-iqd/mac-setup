@@ -1,0 +1,143 @@
+#!/usr/bin/env zsh
+
+# Install homebrew
+echo "\n🍺 \033[1mInstalling Homebrew…\033[0m";
+echo "(that's a package manager for macOS)\n";
+
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
+
+
+# First check OS.
+OS="$(uname)"
+if [[ "${OS}" == "Linux" ]]
+then
+  HOMEBREW_ON_LINUX=1
+elif [[ "${OS}" == "Darwin" ]]
+then
+  HOMEBREW_ON_MACOS=1
+else
+  abort "Homebrew is only supported on macOS and Linux."
+fi
+
+# Required installation paths.
+case "${SHELL}" in
+  */bash*)
+    if [[ -r "${HOME}/.bash_profile" ]]
+    then
+      shell_profile="${HOME}/.bash_profile"
+    else
+      shell_profile="${HOME}/.profile"
+    fi
+    ;;
+  */zsh*)
+    shell_profile="${HOME}/.zprofile"
+    ;;
+  *)
+    shell_profile="${HOME}/.profile"
+    ;;
+esac
+
+if [[ -n "${HOMEBREW_ON_MACOS-}" ]]
+then
+  UNAME_MACHINE="$(/usr/bin/uname -m)"
+
+  if [[ "${UNAME_MACHINE}" == "arm64" ]]
+  then
+    # On ARM macOS, this script installs to /opt/homebrew only
+    HOMEBREW_PREFIX="/opt/homebrew"
+    HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
+  else
+    # On Intel macOS, this script installs to /usr/local only
+    HOMEBREW_PREFIX="/usr/local"
+    HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
+  fi
+  HOMEBREW_CACHE="${HOME}/Library/Caches/Homebrew"
+
+  STAT_PRINTF=("stat" "-f")
+  PERMISSION_FORMAT="%A"
+  CHOWN=("/usr/sbin/chown")
+  CHGRP=("/usr/bin/chgrp")
+  GROUP="admin"
+  TOUCH=("/usr/bin/touch")
+  INSTALL=("/usr/bin/install" -d -o "root" -g "wheel" -m "0755")
+else
+  UNAME_MACHINE="$(uname -m)"
+
+  # On Linux, this script installs to /home/linuxbrew/.linuxbrew only
+  HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+  HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
+  HOMEBREW_CACHE="${HOME}/.cache/Homebrew"
+
+  STAT_PRINTF=("stat" "--printf")
+  PERMISSION_FORMAT="%a"
+  CHOWN=("/bin/chown")
+  CHGRP=("/bin/chgrp")
+  GROUP="$(id -gn)"
+  TOUCH=("/bin/touch")
+  INSTALL=("/usr/bin/install" -d -o "${USER}" -g "${GROUP}" -m "0755")
+fi
+
+# run the last three required steps from the brew installation script
+echo "Running the three lines requested above automatically"
+echo '# Set PATH, MANPATH, etc., for Homebrew.' >> ${shell_profile}
+echo eval "\"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)"\" >> ${shell_profile}
+eval "$(${HOMEBREW_PREFIX}/bin/brew shellenv)"
+echo "Done!"
+
+# Install common tools
+echo "\n💻 \033[1mInstalling Command Line Tools…\033[0m";
+echo "(using the Homebrew package manager)\n";
+
+for x in gh git antigen zsh-completions tree fnm; do brew install $x; done;
+brew install fzf && $(brew --prefix)/opt/fzf/install;
+
+echo "Installed command line tools:" && brew list --formulae -1;
+
+
+# Install macOS apps
+echo "\n🖱 \033[1mInstalling macOS Apps…\033[0m";
+echo "(using the Homebrew package manager)\n";
+
+brew tap homebrew/cask-versions;
+for x in iterm2 visual-studio-code rectangle quicklook-json; do brew install --cask $x; done;
+brew install --cask firefox-developer-edition --lang=en-US;
+
+echo "Installed macOS apps:" && brew list --cask -1;
+
+
+# Set up node lts
+echo "\n⬢ \033[1mInstalling Node LTS…\033[0m";
+echo "(Node is a JavaScript runtime used for local development)\n";
+
+eval "$(fnm env)";
+fnm install lts-latest;
+fnm alias lts-latest default;
+fnm use default;
+echo "Installed Node Version:";
+node -v;
+
+
+# install global node packages
+echo "\n⬢ \033[1mInstalling Global Node Modules…\033[0m";
+echo "(using npm)\n";
+
+npm i -g eslint@8
+
+echo "Installed global node modules:" && npm list -g --depth=0;
+
+
+# configurations
+echo "\n⚙️ \033[1mInstalling configurations…\033[0m";
+echo "(These set up your command line to work and look nicer)\n";
+
+# iTerm shell integration
+curl -L https://iterm2.com/shell_integration/install_shell_integration_and_utilities.sh | bash
+
+# Copy configuration files
+sudo curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/configs/.zshrc > ~/.zshrc;
+curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/configs/.p10k.zsh > ~/.p10k.zsh;
+
+echo "\n✨ \033[1m…all done!\033[0m";
+echo "You can now switch to the iTerm Terminal by pressing \033[1m⌘\033[0m + \033[1mSpace\033[0m and search for \"iTerm\".\n";
+echo "We have some suggestions for nicer macOS settings which you can apply by running:";
+echo "\033[0;36mzsh <(curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/setup-macos)\033[0m\n";
