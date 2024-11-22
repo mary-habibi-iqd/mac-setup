@@ -47,7 +47,7 @@
 
 1. In your git-bash terminal, execute the following command and follow the instructions:
    ```bash
-   bash <(curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/setup-windows.bash)
+   bash <(curl -s https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/refs/heads/main/setup-windows.bash)
    ```
 2. Enter your full name and email address.
 3. Accept the default storage location for your ssh keys ('~/.ssh/id_ed25519') by pressing `enter`.
