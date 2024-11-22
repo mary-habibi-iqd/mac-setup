@@ -83,7 +83,7 @@ Sets up git and connects it to GitHub.
 > Choose **`ssh`** as your preferred connection method. Login and authenticate to GitHub using the browser. (The device code is found in the Terminal.)
 
 ```sh
-zsh <(curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/setup-git)
+zsh <(curl -s https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/refs/heads/main/setup-git)
 ```
 
 <details>
