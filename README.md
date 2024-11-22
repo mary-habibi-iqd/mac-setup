@@ -2,7 +2,6 @@
 
 This is a collection of scripts to setup your macOS.
 
-They are designed for the neue fische web development course.
 
 ## Instructions
 
