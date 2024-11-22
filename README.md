@@ -32,7 +32,7 @@ Installs desktop applications, command line tools and sets up the shell.
 > If you are asked to enable fuzzy auto-completion, enable key bindings and update shell configuration files confirm by pressing <kbd>Enter</kbd>.
 
 ```sh
-zsh <(curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/setup)
+zsh <(curl -s https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup)
 ```
 
 <details>
