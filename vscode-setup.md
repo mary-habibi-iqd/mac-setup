@@ -1,6 +1,6 @@
 # Visual Studio Code Setup
 
-> 💡 Following these steps you will install some basic extensions for Visual Studio Code and do some required setup for the course.
+> 💡 Following these steps you will install some basic extensions for Visual Studio Code.
 
 1. Open **Visual Studio Code**
 2. Open the Extensions Panel (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>X</kbd>)

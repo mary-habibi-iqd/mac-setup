@@ -2,10 +2,6 @@
 # Set some macOS settings
 
 echo "\n🍏 \033[1mSetting nicer macOS configurations…\033[0m";
-echo "(You will be promted to enter your password)\n";
-
-# remove disk eject warning (it's 2022, USB sticks can handle it)
-sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.DiskArbitration.diskarbitrationd.plist DADisableEjectNotification -bool YES && sudo pkill diskarbitrationd
 
 # set dock autohide timings
 defaults write com.apple.dock autohide -bool true
@@ -36,7 +32,6 @@ killall Dock
 killall Finder
 
 echo "\n✨ \033[1m…all done!\033[0m";
-echo "  ✔ disabled disk eject warning";
 echo "  ✔ set dock autohide timings to feel more responsive";
 echo "  ✔ made hidden apps transparent in the dock";
 echo "  ✔ removed recent apps from the dock";

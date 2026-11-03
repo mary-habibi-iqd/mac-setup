@@ -1,21 +1,65 @@
 #!/usr/bin/env zsh
-echo "\n🐙 \033[1mSetting up git and GitHub…\033[0m";
-echo "(Please follow the instructions in the terminal)\n";
+# Set up git and connect it to GitHub
+# Usage: zsh <(curl -fsSL https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup-git)
 
-vared -p 'Enter your full name (e.g. John Doe): ' -c fullname &&
-git config --global user.name $fullname &&
-vared -p 'Enter the e-mail you use for GitHub (john@johndoe.com): ' -c email &&
-git config --global user.email $email;
-git config --global pull.ff "only";
+echo "\n🐙 \033[1mSetting up git and GitHub…\033[0m"
+echo "(Please follow the instructions in the terminal)\n"
+
+if ! command -v git &>/dev/null || ! command -v gh &>/dev/null; then
+  echo "\033[0;31mgit and gh are missing. Please run the setup script first.\033[0m"
+  exit 1
+fi
+
+# Name and email
+fullname="$(git config --global user.name)"
+email="$(git config --global user.email)"
+while [[ -z "$fullname" ]]; do vared -p 'Enter your full name (e.g. John Doe): ' -c fullname; done
+while [[ "$email" != *@*.* ]]; do vared -p 'Enter the e-mail you use for GitHub (john@johndoe.com): ' -c email; done
+
+git config --global user.name "$fullname"
+git config --global user.email "$email"
+git config --global pull.ff only
 git config --global init.defaultBranch main
-ssh-keygen -t ed25519 -C $email;
-eval "$(ssh-agent -s)";
-echo "Host *\n    AddKeysToAgent yes\n    UseKeychain yes\n    IdentityFile ~/.ssh/id_ed25519" > ~/.ssh/config;
-ssh-add -K ~/.ssh/id_ed25519;
-ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts # add github.com to the list of known hosts
 
-echo "Authenticating with GitHub.com…";
-gh auth login;
+# SSH key
+KEY=~/.ssh/id_ed25519
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
 
-echo "\n✨ \033[1m…all done!\033[0m";
-echo "You can now use git with your GitHub account.\n";
+if [[ -f $KEY ]]; then
+  echo "Using your existing ssh key $KEY"
+else
+  echo "Creating a new ssh key…"
+  ssh-keygen -t ed25519 -C "$email" -f $KEY || exit 1
+fi
+
+if ! grep -qs "IdentityFile ~/.ssh/id_ed25519" ~/.ssh/config; then
+  echo "\nHost github.com\n    AddKeysToAgent yes\n    UseKeychain yes\n    IdentityFile ~/.ssh/id_ed25519" >> ~/.ssh/config
+fi
+
+eval "$(ssh-agent -s)" >/dev/null
+ssh-add --apple-use-keychain $KEY
+
+# Add github.com to the list of known hosts
+if ! ssh-keygen -F github.com &>/dev/null; then
+  ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+fi
+
+# Log in to GitHub and upload the ssh key
+echo "\nAuthenticating with GitHub.com…"
+if gh auth status --hostname github.com &>/dev/null; then
+  echo "Already logged in to GitHub."
+  gh ssh-key add $KEY.pub --title "$(scutil --get ComputerName)" 2>/dev/null
+else
+  gh auth login --hostname github.com --git-protocol ssh --web
+fi
+
+# Test the connection
+echo "\nTesting the connection to GitHub…"
+if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+  echo "\n✨ \033[1m…all done!\033[0m"
+  echo "You can now use git with your GitHub account.\n"
+else
+  echo "\n\033[0;31m✖ Could not connect to GitHub via ssh.\033[0m"
+  echo "Check that your key is listed on https://github.com/settings/keys and run this script again.\n"
+  exit 1
+fi

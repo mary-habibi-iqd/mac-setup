@@ -1,143 +1,122 @@
 #!/usr/bin/env zsh
+# macOS development setup
+# Usage: zsh <(curl -fsSL https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup)
 
-# Install homebrew
-echo "\n🍺 \033[1mInstalling Homebrew…\033[0m";
-echo "(that's a package manager for macOS)\n";
+REPO_RAW="https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main"
 
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
+FORMULAE=(git gh fnm fzf eza tree zoxide zsh-completions zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search powerlevel10k)
+CASKS=(iterm2 visual-studio-code rectangle firefox@developer-edition font-meslo-lg-nerd-font)
+
+FAILED=()
+
+title() { echo "\n$1 \033[1m$2\033[0m"; [[ -n "$3" ]] && echo "($3)"; echo; }
+ok()    { echo "  \033[0;32m✔\033[0m $1"; }
+fail()  { echo "  \033[0;31m✖ $1\033[0m"; FAILED+=("$1"); }
 
 
-# First check OS.
-OS="$(uname)"
-if [[ "${OS}" == "Linux" ]]
-then
-  HOMEBREW_ON_LINUX=1
-elif [[ "${OS}" == "Darwin" ]]
-then
-  HOMEBREW_ON_MACOS=1
-else
-  abort "Homebrew is only supported on macOS and Linux."
+# Checks
+if [[ "$(uname)" != "Darwin" ]]; then
+  echo "This script only works on macOS."
+  exit 1
 fi
 
-# Required installation paths.
-case "${SHELL}" in
-  */bash*)
-    if [[ -r "${HOME}/.bash_profile" ]]
-    then
-      shell_profile="${HOME}/.bash_profile"
-    else
-      shell_profile="${HOME}/.profile"
-    fi
-    ;;
-  */zsh*)
-    shell_profile="${HOME}/.zprofile"
-    ;;
-  *)
-    shell_profile="${HOME}/.profile"
-    ;;
-esac
 
-if [[ -n "${HOMEBREW_ON_MACOS-}" ]]
-then
-  UNAME_MACHINE="$(/usr/bin/uname -m)"
+# Install Homebrew
+title "🍺" "Installing Homebrew…" "that's a package manager for macOS"
 
-  if [[ "${UNAME_MACHINE}" == "arm64" ]]
-  then
-    # On ARM macOS, this script installs to /opt/homebrew only
-    HOMEBREW_PREFIX="/opt/homebrew"
-    HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}"
-  else
-    # On Intel macOS, this script installs to /usr/local only
-    HOMEBREW_PREFIX="/usr/local"
-    HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
-  fi
-  HOMEBREW_CACHE="${HOME}/Library/Caches/Homebrew"
-
-  STAT_PRINTF=("stat" "-f")
-  PERMISSION_FORMAT="%A"
-  CHOWN=("/usr/sbin/chown")
-  CHGRP=("/usr/bin/chgrp")
-  GROUP="admin"
-  TOUCH=("/usr/bin/touch")
-  INSTALL=("/usr/bin/install" -d -o "root" -g "wheel" -m "0755")
+if [[ "$(uname -m)" == "arm64" ]]; then
+  HOMEBREW_PREFIX="/opt/homebrew"
 else
-  UNAME_MACHINE="$(uname -m)"
-
-  # On Linux, this script installs to /home/linuxbrew/.linuxbrew only
-  HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
-  HOMEBREW_REPOSITORY="${HOMEBREW_PREFIX}/Homebrew"
-  HOMEBREW_CACHE="${HOME}/.cache/Homebrew"
-
-  STAT_PRINTF=("stat" "--printf")
-  PERMISSION_FORMAT="%a"
-  CHOWN=("/bin/chown")
-  CHGRP=("/bin/chgrp")
-  GROUP="$(id -gn)"
-  TOUCH=("/bin/touch")
-  INSTALL=("/usr/bin/install" -d -o "${USER}" -g "${GROUP}" -m "0755")
+  HOMEBREW_PREFIX="/usr/local"
 fi
 
-# run the last three required steps from the brew installation script
-echo "Running the three lines requested above automatically"
-echo '# Set PATH, MANPATH, etc., for Homebrew.' >> ${shell_profile}
-echo eval "\"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)"\" >> ${shell_profile}
+if [[ -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
+  ok "Homebrew is already installed"
+else
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+if [[ ! -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
+  echo "\033[0;31mHomebrew could not be installed. Please check the error above and run this script again.\033[0m"
+  exit 1
+fi
+
+# Add Homebrew to PATH (only once)
+if ! grep -qs "brew shellenv" ~/.zprofile; then
+  echo '\n# Set PATH, MANPATH, etc., for Homebrew.' >> ~/.zprofile
+  echo "eval \"\$(${HOMEBREW_PREFIX}/bin/brew shellenv)\"" >> ~/.zprofile
+fi
 eval "$(${HOMEBREW_PREFIX}/bin/brew shellenv)"
-echo "Done!"
+brew update
 
-# Install common tools
-echo "\n💻 \033[1mInstalling Command Line Tools…\033[0m";
-echo "(using the Homebrew package manager)\n";
 
-for x in gh git antigen zsh-completions tree fnm; do brew install $x; done;
-brew install fzf && $(brew --prefix)/opt/fzf/install;
+# Install command line tools
+title "💻" "Installing Command Line Tools…" "using the Homebrew package manager"
 
-echo "Installed command line tools:" && brew list --formulae -1;
+for x in $FORMULAE; do
+  if brew list --formula $x &>/dev/null || brew install $x; then ok $x; else fail $x; fi
+done
 
 
 # Install macOS apps
-echo "\n🖱 \033[1mInstalling macOS Apps…\033[0m";
-echo "(using the Homebrew package manager)\n";
+title "🖱" "Installing macOS Apps…" "using the Homebrew package manager"
 
-brew tap homebrew/cask-versions;
-for x in iterm2 visual-studio-code rectangle quicklook-json; do brew install --cask $x; done;
-brew install --cask firefox-developer-edition --lang=en-US;
-
-echo "Installed macOS apps:" && brew list --cask -1;
+for x in $CASKS; do
+  if brew list --cask $x &>/dev/null || brew install --cask $x; then ok $x; else fail $x; fi
+done
 
 
 # Set up node lts
-echo "\n⬢ \033[1mInstalling Node LTS…\033[0m";
-echo "(Node is a JavaScript runtime used for local development)\n";
+title "⬢" "Installing Node LTS…" "Node is a JavaScript runtime used for local development"
 
-eval "$(fnm env)";
-fnm install lts-latest;
-fnm alias lts-latest default;
-fnm use default;
-echo "Installed Node Version:";
-node -v;
-
-
-# install global node packages
-echo "\n⬢ \033[1mInstalling Global Node Modules…\033[0m";
-echo "(using npm)\n";
-
-npm i -g eslint@8
-
-echo "Installed global node modules:" && npm list -g --depth=0;
+eval "$(fnm env --shell zsh)"
+if fnm install --lts && fnm default lts-latest && fnm use default; then
+  ok "Node $(node -v)"
+else
+  fail "Node LTS"
+fi
 
 
-# configurations
-echo "\n⚙️ \033[1mInstalling configurations…\033[0m";
-echo "(These set up your command line to work and look nicer)\n";
+# Configurations
+title "⚙️" "Installing configurations…" "These set up your command line to work and look nicer"
 
 # iTerm shell integration
-curl -L https://iterm2.com/shell_integration/install_shell_integration_and_utilities.sh | bash
+if curl -fsSL https://iterm2.com/shell_integration/install_shell_integration_and_utilities.sh | bash; then
+  ok "iTerm shell integration"
+else
+  fail "iTerm shell integration"
+fi
 
-# Copy configuration files
-sudo curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/configs/.zshrc > ~/.zshrc;
-curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/configs/.p10k.zsh > ~/.p10k.zsh;
+# Back up existing config files, then download the new ones
+BACKUP_SUFFIX=".backup-$(date +%Y%m%d-%H%M%S)"
+for f in .zshrc .p10k.zsh; do
+  tmp="$(mktemp)"
+  if curl -fsSL "${REPO_RAW}/configs/${f}" -o "$tmp"; then
+    if [[ -f ~/$f ]]; then
+      cp ~/$f ~/$f$BACKUP_SUFFIX
+      echo "  Backed up your old ~/$f to ~/$f$BACKUP_SUFFIX"
+    fi
+    mv "$tmp" ~/$f
+    ok "~/$f"
+  else
+    rm -f "$tmp"
+    fail "~/$f (download failed)"
+  fi
+done
 
-echo "\n✨ \033[1m…all done!\033[0m";
-echo "You can now switch to the iTerm Terminal by pressing \033[1m⌘\033[0m + \033[1mSpace\033[0m and search for \"iTerm\".\n";
-echo "We have some suggestions for nicer macOS settings which you can apply by running:";
-echo "\033[0;36mzsh <(curl -s https://raw.githubusercontent.com/neuefische/web-setup/main/setup-macos)\033[0m\n";
+
+# Summary
+if (( ${#FAILED} )); then
+  echo "\n⚠️  \033[1mDone, but some steps failed:\033[0m"
+  for x in $FAILED; do echo "  \033[0;31m✖ $x\033[0m"; done
+  echo "\nRead the error messages above, fix the problem and run the script again."
+  echo "Steps that already worked will be skipped.\n"
+  exit 1
+fi
+
+echo "\n✨ \033[1m…all done!\033[0m"
+echo "You can now switch to the iTerm Terminal by pressing \033[1m⌘\033[0m + \033[1mSpace\033[0m and search for \"iTerm\".\n"
+echo "Next, set up git and GitHub by running:"
+echo "\033[0;36mzsh <(curl -fsSL ${REPO_RAW}/setup-git)\033[0m\n"
+echo "We have some suggestions for nicer macOS settings which you can apply by running:"
+echo "\033[0;36mzsh <(curl -fsSL ${REPO_RAW}/setup-macos)\033[0m\n"

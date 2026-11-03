@@ -12,7 +12,7 @@ Find and run the program "Terminal". This is a program that allows you to run co
 Copy the command you want to run and paste it into the Terminal.  
 Run it by pressing <kbd>Enter</kbd>.
 
-> 💡 In case of any errors, carefully read the error text and google for help. Ask a coach for help if you can't find a solution with your own research.
+> 💡 In case of any errors, carefully read the error text. You can run the scripts again at any time, steps that already worked will be skipped.
 
 ### Which commands should I run?
 
@@ -28,10 +28,10 @@ Installs desktop applications, command line tools and sets up the shell.
 
 > 💡 Enter your macOS users password if you're asked for it and confirm with <kbd>Enter</kbd>. You won't see any characters while typing, but it's still working.
 >
-> If you are asked to enable fuzzy auto-completion, enable key bindings and update shell configuration files confirm by pressing <kbd>Enter</kbd>.
+> Your old `~/.zshrc` is saved as `~/.zshrc.backup-<date>` before it is replaced.
 
 ```sh
-zsh <(curl -s https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup)
+zsh <(curl -fsSL https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup)
 ```
 
 <details>
@@ -43,29 +43,29 @@ The script will install [Homebrew](https://brew.sh/) which is a package manager 
 
 Using Homebrew it will install the following command line tools:
 
-- [gh](https://cli.github.com/) is a command line tool for GitHub
 - [git](https://git-scm.com/) is a version control system
-- [antigen](https://antigen.sharats.me/) is a plugin manager for zsh (the shell)
-- [zsh-completions](https://github.com/zsh-users/zsh-completions#readme) is a collection of additional auto completion definitions for zsh
-- [exa](https://the.exa.website/) is a modern replacement for ls (list files)
-- [tree](http://mama.indstate.edu/users/ice/tree/) is a recursive directory listing command that produces a depth indented listing of files
+- [gh](https://cli.github.com/) is a command line tool for GitHub
 - [fnm](https://github.com/Schniz/fnm#readme) is a fast and simple Node.js version manager
+- [fzf](https://github.com/junegunn/fzf#readme) is a fuzzy finder (search your command history with <kbd>ctrl</kbd><kbd>R</kbd>)
+- [eza](https://eza.rocks/) is a modern replacement for ls (list files)
+- [tree](https://oldmanprogrammer.net/source.php?dir=projects/tree) lists the contents of folders as a tree
+- [zoxide](https://github.com/ajeetdsouza/zoxide#readme) lets you jump to folders you used before with `z <name>`
+- [zsh-completions](https://github.com/zsh-users/zsh-completions#readme), [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions#readme), [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting#readme) and [zsh-history-substring-search](https://github.com/zsh-users/zsh-history-substring-search#readme) make the shell nicer to use
+- [Powerlevel10k](https://github.com/romkatv/powerlevel10k#readme) is a theme for the shell prompt
 
 It will also install the following desktop applications using Homebrew:
 
 - [iTerm2](https://iterm2.com/) is a terminal emulator for macOS
 - [Visual Studio Code](https://code.visualstudio.com/) is a code editor
 - [Rectangle](https://rectangleapp.com/) is a window manager for macOS
-- [QuickLook JSON](http://www.sagtau.com/quicklookjson.html) is a quicklook plugin for JSON files
 - [Firefox Developer Edition](https://www.mozilla.org/en-US/firefox/developer/) is a web browser
+- [MesloLG Nerd Font](https://github.com/ryanoasis/nerd-fonts) is a font with icons used by the prompt
 
 Using fnm the script will install the latest [LTS](https://github.com/nodejs/release#release-schedule) version of [Node.js](https://nodejs.org/en/) a JavaScript runtime.
 
-The script will use npm to install the following packages globally:
+The script will copy the [zsh configuration files](/configs) from this repository to configure zsh. It will also setup [shell-integration for iTerm](https://iterm2.com/documentation-shell-integration.html).
 
-- [eslint](https://eslint.org/) is a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code
-
-The script will copy [zsh configuration files](/configs) from this repository to configure zsh. It will also setup [shell-integration for iTerm](https://iterm2.com/documentation-shell-integration.html).
+> 💡 If the prompt shows broken icons, run `p10k configure` in iTerm. It installs the right font for you.
 
 </details>
 
@@ -82,7 +82,7 @@ Sets up git and connects it to GitHub.
 > Choose **`ssh`** as your preferred connection method. Login and authenticate to GitHub using the browser. (The device code is found in the Terminal.)
 
 ```sh
-zsh <(curl -s https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/refs/heads/main/setup-git)
+zsh <(curl -fsSL https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup-git)
 ```
 
 <details>
@@ -90,21 +90,18 @@ zsh <(curl -s https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/refs/h
 
 This command will download the [`setup-git` script](/setup-git) from GitHub and run it on your computer.
 
-The script will setup git and create a new ssh key for GitHub. It will also add the key to your GitHub account using the GitHub CLI.
+The script will setup git and create a new ssh key for GitHub (an existing key is reused). It will also add the key to your GitHub account using the GitHub CLI and test the connection.
 
 </details>
 
-## Only On-Site: Setting up ghcd Tool
+## ⚙️ Nicer macOS settings (optional)
 
-We use the comand line tool `ghcd` for downloading the challenges. On site cohorts need to set it up with the instructions below. For remote cohorts it should work out of the box, but if you run into issues follow [these instructions](./github-token-setup.md).
+```sh
+zsh <(curl -fsSL https://raw.githubusercontent.com/mary-habibi-iqd/mac-setup/main/setup-macos)
+```
+
+See the [`setup-macos` script](/setup-macos) for the list of changes.
 
 ## Setting up VS Code
 
-Follow [these instructions](./vscode-setup.md) to prepare VS Code for our bootcamp.
-
-## 🎬 Video showing the setup
-
-A video showing the setup process can be found on YouTube:
-
-[<img src="https://img.youtube.com/vi/oSbdusMN0bA/maxresdefault.jpg" width="480" alt="Video Thumbnail – Mac Setup 101"
-/>](https://youtu.be/oSbdusMN0bA)
+Follow [these instructions](./vscode-setup.md) to prepare VS Code.
